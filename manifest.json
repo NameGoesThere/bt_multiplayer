@@ -9,6 +9,6 @@
     "authors": ["namegoesthere"],
     "tags": ["multiplayer"],
     "description_rich": "Bloodthief but with more people.",
-    "download": "example.com",
+    "download": "https://github.com/NameGoesThere/bt_multiplayer/releases/latest/download/bt_multiplayer.zip",
     "repo": "https://github.com/NameGoesThere/bt_multiplayer"
 }
