@@ -1,0 +1,10 @@
+- [ ] Move stuff to .tscn files
+- [ ] Stop players from joining servers that don't exist
+- [ ] Sync map objects (like doors and shit)
+- [ ] Sync enemies
+- [ ] Sync crossbow shots
+- [ ] Show player health next to username
+- [ ] Let players airdash to other players
+- [ ] Change shit to use classes instead of nested dictionaries
+- [ ] Make variable names more consistant
+- [ ] Add code comments

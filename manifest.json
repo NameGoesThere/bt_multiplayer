@@ -1,0 +1,14 @@
+{
+    "name": "bt_multiplayer",
+    "name_pretty": "BT Multiplayer",
+    "namespace": "namegoesthere",
+    "version_number": "1.0.0",
+    "description": "Bloodthief but with more people.",
+    "dependencies": [],
+    "incompatibilities": [],
+    "authors": ["namegoesthere"],
+    "tags": ["multiplayer"],
+    "description_rich": "Bloodthief but with more people.",
+    "download": "example.com",
+    "repo": "example.com"
+}
