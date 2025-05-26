@@ -1,3 +1,5 @@
+# Todo list
+
 - [ ] Move stuff to .tscn files
 - [ ] Stop players from joining servers that don't exist
 - [ ] Sync map objects (like doors and shit)
@@ -6,5 +8,6 @@
 - [ ] Show player health next to username
 - [ ] Let players airdash to other players
 - [ ] Change shit to use classes instead of nested dictionaries
-- [ ] Make variable names more consistant
+- [ ] Make variable names more consistent
 - [ ] Add code comments
+- [ ] Improve modded map support
