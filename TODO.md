@@ -2,12 +2,14 @@
 
 - [ ] Move stuff to .tscn files
 - [ ] Stop players from joining servers that don't exist
-- [ ] Sync map objects (like doors and shit)
+- [ ] Sync map components (like doors)
 - [ ] Sync enemies
 - [ ] Sync crossbow shots
 - [ ] Show player health next to username
 - [ ] Let players airdash to other players
-- [ ] Change shit to use classes instead of nested dictionaries
+- [ ] Change code to use classes instead of nested dictionaries? (idk if this is needed)
 - [ ] Make variable names more consistent
-- [ ] Add code comments
+- [x] Add code comments
 - [ ] Improve modded map support
+- [ ] Make it so players can't attack behind themselves
+- [ ] Heal from player kills

@@ -1,5 +1,6 @@
 extends "res://addons/ModLoader/mod_node.gd"
 
+# Settings
 var setting_join_game = Setting.new(self, "Join Game", Setting.SETTING_BUTTON, join_game)
 var setting_host_game = Setting.new(self, "Host Game", Setting.SETTING_BUTTON, host_game)
 var setting_leave_game = Setting.new(
@@ -23,10 +24,13 @@ var playing: bool = false
 var ip_address: String = ""
 var port: String = ""
 
+# Multiplayer peer
 var peer
 
+# Dictionary of all the players in the server
 var players = {}
 
+# Used to determine if the scene has been changed
 var last_scene
 
 const PLAYER_HEIGHT = 4
@@ -35,6 +39,7 @@ const PLAYER_ATTACK_DAMAGE = 1
 const PLAYER_ATTACK_RANGE = 3.5
 const PLAYER_PARRY_DAMAGE = 1
 
+# Packet compression
 const COMPRESSION_MODE = ENetConnection.COMPRESS_ZLIB
 
 var server_settings = {"pvp_enabled": null, "max_players": null}
@@ -43,6 +48,7 @@ var server_settings = {"pvp_enabled": null, "max_players": null}
 func init():
 	ModLoader.mod_log(name_pretty + " mod loaded")
 
+	# Load settings
 	settings = {
 		"settings_page_name": name_pretty,
 		"settings_list":
@@ -59,6 +65,7 @@ func init():
 		]
 	}
 
+	# Godot RPC functions
 	multiplayer.peer_connected.connect(peer_connected)
 	multiplayer.peer_disconnected.connect(peer_disconnected)
 	multiplayer.connected_to_server.connect(connected_to_server)
@@ -67,14 +74,18 @@ func init():
 
 
 func _process(_delta):
+	# If the scene changed, tell the other players to go to it
 	if last_scene != GameManager.get_tree_root():
 		scene_changed(GameManager.get_tree_root().scene_file_path)
 	last_scene = GameManager.get_tree_root()
 
 
+# Run every physics tick
 func _physics_process(_delta):
+	# Checks if you are actually in a level
 	if is_instance_valid(GameManager.player):
 		if hosting || playing:
+			# Send info to other players
 			send_ingame_info.rpc(
 				multiplayer.get_unique_id(),
 				GameManager.player.last_tick_global_position,
@@ -83,8 +94,10 @@ func _physics_process(_delta):
 				GameManager.player.rotation.y
 			)
 
+			# Loop over all players in the server
 			for i in players:
 				if players[i].id != multiplayer.get_unique_id():
+					# Player cylinder hasn't been made yet
 					if !has_node("PLAYER " + str(players[i].id)):
 						var cylinder = MeshInstance3D.new()
 						cylinder.name = "PLAYER " + str(players[i].id)
@@ -113,16 +126,21 @@ func _physics_process(_delta):
 					else:
 						var player_model = get_node("PLAYER " + str(players[i].id))
 						player_model.position = players[i].position + Vector3(0, 2, 0)
+
+						# Smaller cylinder if player is crouching
 						if players[i].state == "Crouch" || players[i].state == "Slide":
 							player_model.mesh.height = PLAYER_CROUCH_HEIGHT
 							player_model.position -= Vector3(0, 1, 0)
 						else:
 							player_model.mesh.height = PLAYER_HEIGHT
 						player_model.rotation = Vector3(0, players[i].yaw, 0)
-			if GameManager.player.attack_button_just_pressed:
+
+			# Attack 🔥🔥⚔️💯
+			if GameManager.player.attack_button_just_pressed and server_settings["pvp_enabled"]:
 				do_attack.rpc(multiplayer.get_unique_id())
 
 
+# Host button pressed
 func host_game():
 	if playing:
 		ModLoader.mod_log("You can't host a server if you are connected to somebody elses!")
@@ -148,7 +166,6 @@ func host_game():
 
 	ModLoader.mod_log(server_settings)
 
-	# Compress all packets (uses less bandwith)
 	peer.get_host().compress(COMPRESSION_MODE)
 
 	multiplayer.set_multiplayer_peer(peer)
@@ -156,14 +173,18 @@ func host_game():
 	send_player_info(SteamService.get_persona_name(), multiplayer.get_unique_id())
 
 
+# Update settings dictionary
 func update_server_settings(send = true):
 	if hosting:
 		server_settings["pvp_enabled"] = setting_pvp.value
 		server_settings["max_players"] = setting_max_players.value
+
+		# Send to players
 		if send:
 			send_server_settings.rpc(server_settings)
 
 
+# Join button pressed
 func join_game():
 	if hosting:
 		ModLoader.mod_log("You can't join a server if you are hosting!")
@@ -185,12 +206,12 @@ func join_game():
 		playing = false
 		return
 
-	# Compress all packets (uses less bandwith)
 	peer.get_host().compress(COMPRESSION_MODE)
 
 	multiplayer.set_multiplayer_peer(peer)
 
 
+# Stop hosting / playing
 func leave_game():
 	if hosting:
 		hosting = false
@@ -243,6 +264,7 @@ func server_disconnected():
 	players = {}
 
 
+# Called when the scene is changed
 func scene_changed(s):
 	if hosting:
 		switch_scene.rpc(s)
@@ -252,16 +274,19 @@ func scene_changed(s):
 	players = {}
 
 
+# Tells other players to switch the scene
 @rpc("authority")
 func switch_scene(s):
 	GameManager.change_level_scene(s)
 
 
+# Send settings to other players
 @rpc("authority")
 func send_server_settings(settings_dict):
 	server_settings = settings_dict
 
 
+# Send initial player info when a player joins the server
 @rpc("any_peer")
 func send_player_info(name, id):
 	if !players.has(id):
@@ -279,6 +304,7 @@ func send_player_info(name, id):
 			send_player_info.rpc(players[i].name, i)
 
 
+# Send player gameplay info
 @rpc("any_peer")
 func send_ingame_info(id, position, state_string, pitch, yaw):
 	if players[id]:
@@ -288,19 +314,23 @@ func send_ingame_info(id, position, state_string, pitch, yaw):
 		players[id].yaw = yaw
 
 
+# Attack
 @rpc("any_peer")
 func do_attack(id):
 	if server_settings["pvp_enabled"]:
 		if players[id]:
+			# Player is within range of the attacking player
 			if GameManager.player.position.distance_to(players[id].position) <= PLAYER_ATTACK_RANGE:
 				var attack = Attack.new()
 				attack.damage = PLAYER_ATTACK_DAMAGE
 				attack.is_parryable = true
+				# Attack parried
 				if GameManager.player.hurt_and_collide_component.get_hit(attack).was_parried:
 					GameManager.player.play_parry_effects()
 					parry_attack.rpc_id(id, multiplayer.get_unique_id())
 
 
+# Parry
 @rpc("any_peer")
 func parry_attack(id):
 	if server_settings["pvp_enabled"]:
