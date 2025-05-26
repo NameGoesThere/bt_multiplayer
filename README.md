@@ -29,3 +29,5 @@ This is a multiplayer mod for the [Bloodthief Demo](https://store.steampowered.c
 3. Profit
 
 Take a look at the [Todo List](https://github.com/NameGoesThere/bt_multiplayer/blob/main/TODO.md) if you would like to help contribute.
+
+Use [gdformat](https://github.com/Scony/godot-gdscript-toolkit) to format the code.

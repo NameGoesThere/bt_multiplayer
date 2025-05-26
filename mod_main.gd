@@ -2,13 +2,21 @@ extends "res://addons/ModLoader/mod_node.gd"
 
 var setting_join_game = Setting.new(self, "Join Game", Setting.SETTING_BUTTON, join_game)
 var setting_host_game = Setting.new(self, "Host Game", Setting.SETTING_BUTTON, host_game)
-var setting_leave_game = Setting.new(self, "Leave Game / Stop Hosting", Setting.SETTING_BUTTON, leave_game)
+var setting_leave_game = Setting.new(
+	self, "Leave Game / Stop Hosting", Setting.SETTING_BUTTON, leave_game
+)
 var setting_ip_address = Setting.new(self, "IP Address", Setting.SETTING_TEXT_INPUT, "127.0.0.1")
 var setting_port = Setting.new(self, "Port", Setting.SETTING_TEXT_INPUT, "1818")
-var separator_server_settings = Setting.new(self, "↓ Server Settings ↓", Setting.SETTING_BUTTON, null)
-var setting_max_players = Setting.new(self, "Max Player Count", Setting.SETTING_INT, 3, Vector2(2, 16))
+var separator_server_settings = Setting.new(
+	self, "↓ Server Settings ↓", Setting.SETTING_BUTTON, null
+)
+var setting_max_players = Setting.new(
+	self, "Max Player Count", Setting.SETTING_INT, 3, Vector2(2, 16)
+)
 var setting_pvp = Setting.new(self, "Combat Enabled", Setting.SETTING_BOOL, true)
-var setting_update_server_settings = Setting.new(self, "Update Server Settings", Setting.SETTING_BUTTON, update_server_settings)
+var setting_update_server_settings = Setting.new(
+	self, "Update Server Settings", Setting.SETTING_BUTTON, update_server_settings
+)
 
 var hosting: bool = false
 var playing: bool = false
@@ -29,19 +37,25 @@ const PLAYER_PARRY_DAMAGE = 1
 
 const COMPRESSION_MODE = ENetConnection.COMPRESS_ZLIB
 
-var server_settings = {
-	"pvp_enabled" = null,
-	"max_players" = null
-}
+var server_settings = {"pvp_enabled": null, "max_players": null}
+
 
 func init():
 	ModLoader.mod_log(name_pretty + " mod loaded")
-	
+
 	settings = {
-		"settings_page_name" = name_pretty,
-		"settings_list" = [
-			setting_update_server_settings, setting_pvp, setting_max_players, separator_server_settings,
-			setting_leave_game, setting_join_game, setting_host_game, setting_ip_address, setting_port
+		"settings_page_name": name_pretty,
+		"settings_list":
+		[
+			setting_update_server_settings,
+			setting_pvp,
+			setting_max_players,
+			separator_server_settings,
+			setting_leave_game,
+			setting_join_game,
+			setting_host_game,
+			setting_ip_address,
+			setting_port
 		]
 	}
 
@@ -51,23 +65,27 @@ func init():
 	multiplayer.connection_failed.connect(connection_failed)
 	multiplayer.server_disconnected.connect(server_disconnected)
 
+
 func _process(_delta):
 	if last_scene != GameManager.get_tree_root():
 		scene_changed(GameManager.get_tree_root().scene_file_path)
 	last_scene = GameManager.get_tree_root()
 
+
 func _physics_process(_delta):
 	if is_instance_valid(GameManager.player):
 		if hosting || playing:
-			send_ingame_info.rpc(multiplayer.get_unique_id(), 
-			GameManager.player.last_tick_global_position, 
-			GameManager.player.current_state_name, 
-			GameManager.player.pivot.rotation.x, 
-			GameManager.player.rotation.y)
+			send_ingame_info.rpc(
+				multiplayer.get_unique_id(),
+				GameManager.player.last_tick_global_position,
+				GameManager.player.current_state_name,
+				GameManager.player.pivot.rotation.x,
+				GameManager.player.rotation.y
+			)
 
 			for i in players:
 				if players[i].id != multiplayer.get_unique_id():
-					if !has_node("PLAYER " + str(players[i].id)):						
+					if !has_node("PLAYER " + str(players[i].id)):
 						var cylinder = MeshInstance3D.new()
 						cylinder.name = "PLAYER " + str(players[i].id)
 
@@ -104,11 +122,12 @@ func _physics_process(_delta):
 			if GameManager.player.attack_button_just_pressed:
 				do_attack.rpc(multiplayer.get_unique_id())
 
+
 func host_game():
 	if playing:
 		ModLoader.mod_log("You can't host a server if you are connected to somebody elses!")
 		return
-	
+
 	if hosting:
 		ModLoader.mod_log("You are already hosting a server!")
 		return
@@ -136,12 +155,14 @@ func host_game():
 
 	send_player_info(SteamService.get_persona_name(), multiplayer.get_unique_id())
 
+
 func update_server_settings(send = true):
 	if hosting:
 		server_settings["pvp_enabled"] = setting_pvp.value
 		server_settings["max_players"] = setting_max_players.value
 		if send:
 			send_server_settings.rpc(server_settings)
+
 
 func join_game():
 	if hosting:
@@ -169,6 +190,7 @@ func join_game():
 
 	multiplayer.set_multiplayer_peer(peer)
 
+
 func leave_game():
 	if hosting:
 		hosting = false
@@ -181,11 +203,13 @@ func leave_game():
 	else:
 		ModLoader.mod_log("You aren't hosting or playing!")
 
+
 # Called on server + clients
 func peer_connected(id):
 	ModLoader.mod_log("Player connected with id: " + str(id))
 	if hosting:
 		send_server_settings.rpc_id(id, server_settings)
+
 
 # Called on server + clients
 func peer_disconnected(id):
@@ -193,10 +217,11 @@ func peer_disconnected(id):
 	players.erase(id)
 	if has_node("PLAYER " + str(id)):
 		get_node("PLAYER " + str(id)).queue_free()
-	
+
 	if id == 1:
 		ModLoader.mod_log("Host has left! Disabling multiplayer.")
 		playing = false
+
 
 # Called on clients
 func connected_to_server():
@@ -204,16 +229,19 @@ func connected_to_server():
 	send_player_info.rpc_id(1, SteamService.get_persona_name(), multiplayer.get_unique_id())
 	players = {}
 
+
 # Called on clients
 func connection_failed():
 	ModLoader.mod_log("Connection failed!")
 	playing = false
+
 
 # Called on clients
 func server_disconnected():
 	ModLoader.mod_log("Server disconnected!")
 	playing = false
 	players = {}
+
 
 func scene_changed(s):
 	if hosting:
@@ -223,13 +251,16 @@ func scene_changed(s):
 			get_node("PLAYER " + players[i].id).queue_free()
 	players = {}
 
+
 @rpc("authority")
 func switch_scene(s):
 	GameManager.change_level_scene(s)
 
+
 @rpc("authority")
 func send_server_settings(settings_dict):
 	server_settings = settings_dict
+
 
 @rpc("any_peer")
 func send_player_info(name, id):
@@ -247,6 +278,7 @@ func send_player_info(name, id):
 		for i in players:
 			send_player_info.rpc(players[i].name, i)
 
+
 @rpc("any_peer")
 func send_ingame_info(id, position, state_string, pitch, yaw):
 	if players[id]:
@@ -254,6 +286,7 @@ func send_ingame_info(id, position, state_string, pitch, yaw):
 		players[id].state = state_string
 		players[id].pitch = pitch
 		players[id].yaw = yaw
+
 
 @rpc("any_peer")
 func do_attack(id):
@@ -266,6 +299,7 @@ func do_attack(id):
 				if GameManager.player.hurt_and_collide_component.get_hit(attack).was_parried:
 					GameManager.player.play_parry_effects()
 					parry_attack.rpc_id(id, multiplayer.get_unique_id())
+
 
 @rpc("any_peer")
 func parry_attack(id):
