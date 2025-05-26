@@ -8,6 +8,7 @@ var setting_port = Setting.new(self, "Port", Setting.SETTING_TEXT_INPUT, "1818")
 var separator_server_settings = Setting.new(self, "↓ Server Settings ↓", Setting.SETTING_BUTTON, null)
 var setting_max_players = Setting.new(self, "Max Player Count", Setting.SETTING_INT, 3, Vector2(2, 16))
 var setting_pvp = Setting.new(self, "Combat Enabled", Setting.SETTING_BOOL, true)
+var setting_update_server_settings = Setting.new(self, "Update Server Settings", Setting.SETTING_BUTTON, update_server_settings)
 
 var hosting: bool = false
 var playing: bool = false
@@ -39,7 +40,7 @@ func init():
 	settings = {
 		"settings_page_name" = name_pretty,
 		"settings_list" = [
-			setting_pvp, setting_max_players, separator_server_settings,
+			setting_update_server_settings, setting_pvp, setting_max_players, separator_server_settings,
 			setting_leave_game, setting_join_game, setting_host_game, setting_ip_address, setting_port
 		]
 	}
@@ -124,8 +125,7 @@ func host_game():
 		hosting = false
 		return
 
-	server_settings["pvp_enabled"] = setting_pvp.value
-	server_settings["max_players"] = setting_max_players.value
+	update_server_settings(false)
 
 	ModLoader.mod_log(server_settings)
 
@@ -135,6 +135,13 @@ func host_game():
 	multiplayer.set_multiplayer_peer(peer)
 
 	send_player_info(SteamService.get_persona_name(), multiplayer.get_unique_id())
+
+func update_server_settings(send = true):
+	if hosting:
+		server_settings["pvp_enabled"] = setting_pvp.value
+		server_settings["max_players"] = setting_max_players.value
+		if send:
+			send_server_settings.rpc(server_settings)
 
 func join_game():
 	if hosting:
@@ -178,7 +185,7 @@ func leave_game():
 func peer_connected(id):
 	ModLoader.mod_log("Player connected with id: " + str(id))
 	if hosting:
-		send_server_settings.rpc(server_settings)
+		send_server_settings.rpc_id(id, server_settings)
 
 # Called on server + clients
 func peer_disconnected(id):
